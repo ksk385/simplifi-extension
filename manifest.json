@@ -3,10 +3,7 @@
   "name": "Simplifi Extension",
   "version": "1.0",
   "description": "Improvements to Simplifi",
-  "background": {
-    "service_worker": "service-worker.js"
-  },
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs"],
   "content_scripts": [
     {
       "matches": ["https://simplifi.quicken.com/*"],
