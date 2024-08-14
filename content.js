@@ -1,3 +1,6 @@
+let addedButton = false;
+let observer = null;
+
 function addSplitButton() {
   // Select the node that will be observed for mutations
   const targetNode = document.querySelector("div#registerList");
@@ -25,42 +28,59 @@ function addSplitButton() {
         if (selectedTxnsCheckboxes.length > 0) {
           console.log("Multiple Txns Selected:", selectedTxnsCheckboxes);
           const targetToolbar = document.querySelector(
-            'div[class*="optionalIconSpace"]'
+            'div[class*="growableArea"]'
           );
           console.log("Target header found:", targetToolbar);
 
-          if (targetToolbar) {
+          if (targetToolbar && !addedButton) {
             multipleTxnsSelected = true;
+
             const button = document.createElement("button");
-            button.textContent = "Split";
-            button.style.border = "1px solid";
+            button.id = "split-txns";
+            button.textContent = "S";
+            button.style.border = "none";
+            button.style.fontSize = "1.5em";
+            button.style.fontWeight = "bold";
+            button.style.width = "38px";
+            button.style.height = "38px";
             button.style.backgroundColor = "white";
-            button.style.color = "#0a4a73";
-            button.style.borderRadius = "20px";
+            button.style.color = "#617179";
             button.style.cursor = "pointer";
-            button.style.padding = "5px 10px";
 
             button.onclick = function () {
               splitSelectedTransactions(selectedTxnsCheckboxes);
             };
 
+            const divider = document.createElement("hr");
+            divider.className =
+              "sc-ctqQKy kaFCbK MuiDivider-root MuiDivider-middle MuiDivider-vertical MuiDivider-flexItem";
+            targetToolbar.appendChild(divider);
             targetToolbar.appendChild(button);
-
-            // Stop observing the target node
-            observer.disconnect();
+            addedButton = true;
           } else {
             console.log("Toolbar not found.");
           }
+        } else {
+          console.log("No Txns Selected");
+          removeSplitButton();
         }
       }
     }
   };
 
   // Create an observer instance linked to the callback function
-  const observer = new MutationObserver(callback);
+  observer = new MutationObserver(callback);
 
   // Start observing the target node for configured mutations
   observer.observe(targetNode, config);
+}
+
+function removeSplitButton() {
+  const splitButton = document.querySelector("button#split-txns");
+  if (splitButton) {
+    splitButton.remove();
+    addedButton = false;
+  }
 }
 
 const sleepUntil = async (f, timeoutMs) => {
@@ -82,7 +102,9 @@ const sleepUntil = async (f, timeoutMs) => {
 };
 
 async function splitSelectedTransactions(selectedTxnsCheckboxes) {
-  for (txnCheckbox of selectedTxnsCheckboxes) {
+  let currentTxn = selectedTxnsCheckboxes.length;
+  while (currentTxn--) {
+    const txnCheckbox = selectedTxnsCheckboxes[currentTxn];
     // Click the View Transaction
     const registerRow = txnCheckbox.parentElement;
     registerRow.querySelector("button#txnMenu").click();
@@ -98,10 +120,12 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
 
     // Add another category Split
     await sleepUntil(() =>
-      document.querySelector('div[role="dialog"] div[class*="bottom"] button')
+      document.querySelector(
+        'div[role="dialog"] div[class*="bottomButtons"] button'
+      )
     );
     document
-      .querySelector('div[role="dialog"] div[class*="bottom"] button')
+      .querySelector('div[role="dialog"] div[class*="bottomButtons"] button')
       .click();
 
     const enterEvent = new KeyboardEvent("keydown", {
@@ -116,9 +140,11 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
     document.querySelector("input#split-cat-1-input").click();
 
     // Hit enter to select any category
+    await setTimeout(() => {}, 1000);
     document.querySelector("input#split-cat-1-input").dispatchEvent(enterEvent);
 
     // Update the category that we need
+    await setTimeout(() => {}, 1000);
     document.querySelector("input#split-cat-1-input").value = "Kids Supplies";
 
     // Update second category
@@ -127,10 +153,11 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
     document.querySelector("input#split-cat-2-input").click();
 
     // Hit enter to select any category
-
+    await setTimeout(() => {}, 1000);
     document.querySelector("input#split-cat-2-input").dispatchEvent(enterEvent);
 
     // Update the category that we need
+    await setTimeout(() => {}, 1000);
     document.querySelector("input#split-cat-2-input").value =
       "Personal Supplies";
 
@@ -157,6 +184,11 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
     // Click Update on Transaction Details
     await sleepUntil(() => document.querySelector("button#save-txn"));
     document.querySelector("button#save-txn").click();
+
+    console.log("Transaction Split Successfully");
+    console.log("Current Txn", currentTxn);
+    console.log("Remaining Txns", selectedTxnsCheckboxes.length);
+    selectedTxnsCheckboxes.splice(currentTxn, 1);
   }
 }
 
@@ -164,16 +196,19 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
 window.navigation.addEventListener("navigate", (event) => {
   const url = event.destination.url;
   console.log("location changed!");
-  if (url.match("transactions")) {
+  if (url.match("transactions") && !addedButton) {
     console.log("Transactions page found!");
     addSplitButton();
+  } else {
+    console.log("Stopping Observer");
+    observer.disconnect();
   }
 });
 
 console.log("Content Script Loaded");
 
 // If we are already on transactions page, add the button
-if (window.location.href.match("transactions")) {
+if (window.location.href.match("transactions") && !addedButton) {
   console.log("Transactions page found!");
   addSplitButton();
 }
