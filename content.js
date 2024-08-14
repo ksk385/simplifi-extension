@@ -1,5 +1,6 @@
 let addedButton = false;
 let observer = null;
+let selectedTxnsCheckboxesArray = [];
 
 function addSplitButton() {
   // Select the node that will be observed for mutations
@@ -24,17 +25,16 @@ function addSplitButton() {
         const selectedTxnsCheckboxes = document.querySelectorAll(
           'div#registerList span[class*="Mui-checked"]'
         );
+        selectedTxnsCheckboxesArray = Array.from(selectedTxnsCheckboxes);
 
-        if (selectedTxnsCheckboxes.length > 0) {
-          console.log("Multiple Txns Selected:", selectedTxnsCheckboxes);
+        if (selectedTxnsCheckboxesArray.length > 0) {
+          console.log("Multiple Txns Selected:", selectedTxnsCheckboxesArray);
           const targetToolbar = document.querySelector(
             'div[class*="growableArea"]'
           );
           console.log("Target header found:", targetToolbar);
 
           if (targetToolbar && !addedButton) {
-            multipleTxnsSelected = true;
-
             const button = document.createElement("button");
             button.id = "split-txns";
             button.textContent = "S";
@@ -48,12 +48,13 @@ function addSplitButton() {
             button.style.cursor = "pointer";
 
             button.onclick = function () {
-              splitSelectedTransactions(selectedTxnsCheckboxes);
+              splitSelectedTransactions();
             };
 
             const divider = document.createElement("hr");
             divider.className =
               "sc-ctqQKy kaFCbK MuiDivider-root MuiDivider-middle MuiDivider-vertical MuiDivider-flexItem";
+            divider.id = "split-txns-divider";
             targetToolbar.appendChild(divider);
             targetToolbar.appendChild(button);
             addedButton = true;
@@ -77,8 +78,10 @@ function addSplitButton() {
 
 function removeSplitButton() {
   const splitButton = document.querySelector("button#split-txns");
-  if (splitButton) {
+  const divider = document.querySelector("hr#split-txns-divider");
+  if (splitButton || divider) {
     splitButton.remove();
+    divider.remove();
     addedButton = false;
   }
 }
@@ -101,10 +104,10 @@ const sleepUntil = async (f, timeoutMs) => {
   });
 };
 
-async function splitSelectedTransactions(selectedTxnsCheckboxes) {
-  let currentTxn = selectedTxnsCheckboxes.length;
+async function splitSelectedTransactions() {
+  let currentTxn = selectedTxnsCheckboxesArray.length;
   while (currentTxn--) {
-    const txnCheckbox = selectedTxnsCheckboxes[currentTxn];
+    const txnCheckbox = selectedTxnsCheckboxesArray[currentTxn];
     // Click the View Transaction
     const registerRow = txnCheckbox.parentElement;
     registerRow.querySelector("button#txnMenu").click();
@@ -187,8 +190,8 @@ async function splitSelectedTransactions(selectedTxnsCheckboxes) {
 
     console.log("Transaction Split Successfully");
     console.log("Current Txn", currentTxn);
-    console.log("Remaining Txns", selectedTxnsCheckboxes.length);
-    selectedTxnsCheckboxes.splice(currentTxn, 1);
+    console.log("Remaining Txns", selectedTxnsCheckboxesArray.length);
+    selectedTxnsCheckboxesArray.splice(currentTxn, 1);
   }
 }
 
